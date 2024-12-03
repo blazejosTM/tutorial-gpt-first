@@ -114,6 +114,10 @@ m = BigramLanguageModel(vocab_size)
 logits, loss = m(xb,yb)
 print(logits.shape)
 print(loss)
-print(decode(m.generate(torch.zeros((1,1), dtype = torch.long), max_new_tokens = 100)[0].tolist()))
+
+
+idx = torch.zeros((1,1), dtype=torch.long)
+# Non trained model, outpust gibberish
+print(decode(m.generate(idx, max_new_tokens = 100)[0].tolist()))
 
 
