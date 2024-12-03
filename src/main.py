@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 #print(torch.cuda.is_available())
 
-
+print("IS CUDA AVAILABE?: "+str(torch.cuda.is_available()))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 with open('data/input.txt', 'r', encoding='utf-8') as f:
     text = f.read()
@@ -24,7 +24,7 @@ decode = lambda list: [itos[integer] for integer in list]           # decode = t
 #print(encode("Hehe hello people"))
 #print(decode(encode("Hehe hello people")))
 
-data = torch.tensor(encode(text), dtype=torch.long)
+data = torch.tensor(encode(text), dtype=torch.long, device=device)
 #print(data.shape, data.dtype)
 #print(data[:1000])
 
@@ -34,8 +34,11 @@ train_data = data[:n]
 val_data = data[n:]
 
 torch.manual_seed(1337)
-batch_size = 4      # how many independent sequences can we process parallel at a time
+batch_size = 32     # how many independent sequences can we process parallel at a time
 block_size = 8      # size of chunks to feed into transformer for training ( max context length for prediction)
+eval_iter = 200     # how many evaluation iterations
+max_iters = 3000
+learning_rate = 1e-2
 #print(train_data[:block_size+1])
 
 def get_batch(split):
@@ -47,7 +50,7 @@ def get_batch(split):
     x = torch.stack([data[i:i+block_size] for i in ix])
     # y is offset by one, so we can use it in training
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
-    return x, y
+    return x.to(device), y.to(device)
 
 xb,yb = get_batch('train')
 print("INPUTS:")
@@ -111,13 +114,32 @@ class BigramLanguageModel(nn.Module):
 
 
 m = BigramLanguageModel(vocab_size)
+m = m.to(device)
+
 logits, loss = m(xb,yb)
 print(logits.shape)
 print(loss)
 
 
-idx = torch.zeros((1,1), dtype=torch.long)
+idx = torch.zeros((1,1), dtype=torch.long, device=device)
 # Non trained model, outpust gibberish
-print(decode(m.generate(idx, max_new_tokens = 100)[0].tolist()))
+print("".join(decode(m.generate(idx, max_new_tokens = 300)[0].tolist())))
 
+# create torch optimizer
+optimizer = torch.optim.AdamW(m.parameters(), lr=2e-21)
 
+training_steps = 15000
+for steps in range(training_steps):
+    # sample a batch of data
+    xb, yb = get_batch('train')
+
+    # evaluate loss
+    logits, loss = m(xb,yb)
+    optimizer.zero_grad(set_to_none=True)   # zeroing gradients from previous step
+    loss.backward()                         # gradients for all parameters
+    optimizer.step()                        # update params
+    if steps%(training_steps//10) == 0:
+        print("Done "+str(100*(steps/training_steps))+"% so far.")
+print("loss:" + str(loss.item()))
+print("\n\n post-optimization gen:")
+print("".join(decode(m.generate(idx, max_new_tokens = 300)[0].tolist())))
