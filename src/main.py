@@ -80,21 +80,40 @@ class BigramLanguageModel(nn.Module):
         # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
 
-    def forward(self, idx, targets):
+    def forward(self, idx, targets = None):
         # idx and targets are both (B,T) tensor of integers
         logits = self.token_embedding_table(idx) # (B,T,C) - batch time channel tensor ( B = 4, T = 8, C = vocab_size -- 65)
-
-        B, T, C = logits.shape
-        logits = logits.view(B*T, C) # stretching array to 2 dimensions, so it fits into our cross_entropy function(channel needs to come second)
-        targets = targets.view(B*T)
-        # loss - Cross entropy measures quality of logits with respect to targets. We know next character, how well are we doing it?
-        loss = F.cross_entropy(logits, targets)
+        if targets is None:                      # if targets not provided dont do anything, return logits later
+            loss = None
+        else:
+            B, T, C = logits.shape
+            logits = logits.view(B*T, C) # stretching array to 2 dimensions, so it fits into our cross_entropy function(channel needs to come second)
+            targets = targets.view(B*T)
+            # loss - Cross entropy measures quality of logits with respect to targets. We know next character, how well are we doing it?
+            loss = F.cross_entropy(logits, targets)
         return logits, loss
+
+    def generate(self, idx, max_new_tokens):
+        # idx is (B, T) array of indices here
+        for _ in range(max_new_tokens):
+            # get the predictions
+            logits, loss = self(idx)            #when inheriting nn.Module, calling self runs forward function basically.
+            # focus on last time stem
+            logits = logits[:, -1, :] # becomes (B,C)
+            # apply softmax to get probabilities
+            probs = F.softmax(logits, dim=-1) # (B, C)
+            # sample from distribution
+            idx_next = torch.multinomial(probs, num_samples=1) # (B, 1)
+            # append sampled index to the running sequence
+            idx = torch.cat((idx, idx_next), dim=-1) # (B, T+1)
+        return idx
+
 
 
 m = BigramLanguageModel(vocab_size)
 logits, loss = m(xb,yb)
 print(logits.shape)
 print(loss)
+print(decode(m.generate(torch.zeros((1,1), dtype = torch.long), max_new_tokens = 100)[0].tolist()))
 
 
