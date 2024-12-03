@@ -36,8 +36,9 @@ val_data = data[n:]
 torch.manual_seed(1337)
 batch_size = 32     # how many independent sequences can we process parallel at a time
 block_size = 8      # size of chunks to feed into transformer for training ( max context length for prediction)
-eval_iter = 200     # how many evaluation iterations
-max_iters = 3000
+max_iters = 5000
+eval_interval = max_iters//15     # how many evaluation iterations
+eval_iters = 200
 learning_rate = 1e-2
 #print(train_data[:block_size+1])
 
@@ -51,6 +52,20 @@ def get_batch(split):
     # y is offset by one, so we can use it in training
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
     return x.to(device), y.to(device)
+
+@torch.no_grad()        #info for toch, not using.backward on these - makes run more efficiently, does not store intermediate vars
+def estimate_loss():
+    out = {}
+    m.eval()
+    for split in ['train', 'val']:
+        losses = torch.zeros(eval_iters)
+        for k in range(eval_iters):
+            X,Y = get_batch(split)
+            logits, loss = m(X, Y)
+            losses[k] = loss.item()
+        out[split] = losses.mean()
+    m.train()
+    return out
 
 xb,yb = get_batch('train')
 print("INPUTS:")
@@ -71,11 +86,33 @@ def print_examples(xb, yb, batch_size = 4, block_size = 8):
             print(f"When input is {context.tolist()} the target is {target}")
 
 # print_examples(xb, yb)
+#Math trick for self-attention:
+torch.manual_seed(1337)
+B,T,C = 4,8,2 # batch time channels
+x = torch.randn(B,T,C)
+print(x.shape)
+
+# We want x[b,t] = mean_{i<=t} x [b,i]
+xbow = torch.zeros((B,T,C)) # bow - bag of words - tensor contains different words, they will be mixed in here
+for b in range(B):
+    for t in range(T):
+        xprev = x[b,:t+1] # (t,C)
+        xbow[b,t] = torch.mean(xprev,0)             # averaging out all previous tokens "memory" to let present
+                                                    # token know what happened in the past. Bit inefficient, but the trick
+print(x[0])                                                    # comes here:
+print(xbow[0])
+# using matrix multiplication tricks
+wei = torch.tril(torch.ones(T,T))
+wei = wei / wei.sum(1,keepdim=True)
+print(wei)
+xbow2 = wei @ x # (B,T,T) @ (B,T,C) --> (B,T,C)
+
+print(torch.allclose(xbow, xbow2))
 
 import torch.nn as nn
 from torch.nn import functional as F
 torch.manual_seed(1337)
-
+# simple basic bigram model
 class BigramLanguageModel(nn.Module):
 
     def __init__(self, vocab_size):
@@ -126,10 +163,15 @@ idx = torch.zeros((1,1), dtype=torch.long, device=device)
 print("".join(decode(m.generate(idx, max_new_tokens = 300)[0].tolist())))
 
 # create torch optimizer
-optimizer = torch.optim.AdamW(m.parameters(), lr=2e-21)
+optimizer = torch.optim.AdamW(m.parameters(), lr=learning_rate)
 
-training_steps = 15000
-for steps in range(training_steps):
+for iter in range(max_iters):
+
+    if iter%eval_interval == 0:
+        print("Done "+str(100*(iter/max_iters))+"% so far.")
+        losses = estimate_loss()
+        print(f"step {iter}: train loss: {losses['train']:.4f}, val loss {losses['val']:.4f}")
+
     # sample a batch of data
     xb, yb = get_batch('train')
 
@@ -138,8 +180,8 @@ for steps in range(training_steps):
     optimizer.zero_grad(set_to_none=True)   # zeroing gradients from previous step
     loss.backward()                         # gradients for all parameters
     optimizer.step()                        # update params
-    if steps%(training_steps//10) == 0:
-        print("Done "+str(100*(steps/training_steps))+"% so far.")
-print("loss:" + str(loss.item()))
+
+
+context = torch.zeros((1,1), dtype=torch.long, device=device)
 print("\n\n post-optimization gen:")
-print("".join(decode(m.generate(idx, max_new_tokens = 300)[0].tolist())))
+print("".join(decode(m.generate(context, max_new_tokens = 500)[0].tolist())))
