@@ -1,3 +1,5 @@
+# data used: https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
+
 import torch
 import numpy as np
 import pandas as pd
