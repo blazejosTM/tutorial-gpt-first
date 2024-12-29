@@ -42,6 +42,7 @@ max_iters = 5000
 eval_interval = max_iters//15     # how many evaluation iterations
 eval_iters = 200
 learning_rate = 1e-2
+n_embd = 32
 #print(train_data[:block_size+1])
 
 def get_batch(split):
@@ -87,6 +88,10 @@ def print_examples(xb, yb, batch_size = 4, block_size = 8):
             target = yb[b, t]
             print(f"When input is {context.tolist()} the target is {target}")
 
+import torch.nn as nn
+from torch.nn import functional as F
+
+
 # print_examples(xb, yb)
 #Math trick for self-attention:
 torch.manual_seed(1337)
@@ -100,7 +105,7 @@ for b in range(B):
     for t in range(T):
         xprev = x[b,:t+1] # (t,C)
         xbow[b,t] = torch.mean(xprev,0)             # averaging out all previous tokens "memory" to let present
-                                                    # token know what happened in the past. Bit inefficient, but the trick
+        # token know what happened in the past. Bit inefficient, but the trick
 print(x[0])                                                    # comes here:
 print(xbow[0])
 # using matrix multiplication tricks
@@ -111,20 +116,28 @@ xbow2 = wei @ x # (B,T,T) @ (B,T,C) --> (B,T,C)
 
 print(torch.allclose(xbow, xbow2))
 
-import torch.nn as nn
-from torch.nn import functional as F
+""" Third option, optimization using softmax"""
+tril = torch.tril(torch.ones(T,T))
+wei = torch.zeros((T,T))
+wei = wei / wei.sum(1,keepdim=True)
+wei = wei.masked_fill(tril==0, float('-inf')) # wei gets -inf on every field with 0, lower triangular remains the same
+wei = F.softmax(wei, dim=-1) # normalization, we get same matrix in the end
+xbow3 = wei @ x
+print(f"Softmax optimization; {torch.allclose(xbow, xbow3)}")
 torch.manual_seed(1337)
+
 # simple basic bigram model
 class BigramLanguageModel(nn.Module):
 
-    def __init__(self, vocab_size):
+    def __init__(self):
         super().__init__()
         # each token directly reads off the logits for the next token from a lookup table
-        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
-
+        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
+        self.lm_head = nn.Linear(n_embd, vocab_size)
     def forward(self, idx, targets = None):
         # idx and targets are both (B,T) tensor of integers
-        logits = self.token_embedding_table(idx) # (B,T,C) - batch time channel tensor ( B = 4, T = 8, C = vocab_size -- 65)
+        token_embd = self.token_embedding_table(idx) # (B,T,C) - batch time channel tensor ( B = 4, T = 8, C = vocab_size -- 65)
+        logits = self.lm_head(token_embd)           # (B,T,C)
         if targets is None:                      # if targets not provided dont do anything, return logits later
             loss = None
         else:
@@ -152,7 +165,7 @@ class BigramLanguageModel(nn.Module):
 
 
 
-m = BigramLanguageModel(vocab_size)
+m = BigramLanguageModel()
 m = m.to(device)
 
 logits, loss = m(xb,yb)
