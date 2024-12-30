@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2491d033-fd22-4e41-8739-68cfcf60d2dc" name="Changes" comment="Updated model generation, sample generations, optimizer, timeline 38:01">
-      <change beforePath="$PROJECT_DIR$/.idea/gepetto.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gepetto.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="2491d033-fd22-4e41-8739-68cfcf60d2dc" name="Changes" comment="Updated, cleanup, 60">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
     </list>
@@ -88,7 +86,7 @@
       <workItem from="1733227386694" duration="14271000" />
       <workItem from="1735232776410" duration="1423000" />
       <workItem from="1735234385353" duration="2470000" />
-      <workItem from="1735425967922" duration="3579000" />
+      <workItem from="1735425967922" duration="7494000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit, starting the tutorial :)">
       <option name="closed" value="true" />
@@ -130,7 +128,15 @@
       <option name="project" value="LOCAL" />
       <updated>1733233499088</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Updated, cleanup, 60">
+      <option name="closed" value="true" />
+      <created>1735431273482</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1735431273482</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -153,10 +159,11 @@
     <MESSAGE value="Updated model class, timeline 32:13" />
     <MESSAGE value="Updated model generation, timeline 35" />
     <MESSAGE value="Updated model generation, sample generations, optimizer, timeline 38:01" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated model generation, sample generations, optimizer, timeline 38:01" />
+    <MESSAGE value="Updated, cleanup, 60" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated, cleanup, 60" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/tutorial_gpt_first$main.coverage" NAME="main Coverage Results" MODIFIED="1735239263454" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/tutorial_gpt_first$main.coverage" NAME="main Coverage Results" MODIFIED="1735431412880" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/gepetto$main.coverage" NAME="main Coverage Results" MODIFIED="1733235034932" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>
